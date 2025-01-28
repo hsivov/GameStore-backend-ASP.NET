@@ -1,10 +1,7 @@
 ﻿using GameStore.Models.DTO;
 using GameStore.Models.Entities;
 using GameStore.Repositories;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace GameStore.Services.Impl
 {
@@ -43,7 +40,7 @@ namespace GameStore.Services.Impl
 
         public async Task<GameDTO> GetGameByIdAsync(Guid id)
         {
-            var game = await _gameRepository.GetByIdAsync(id);
+            var game = await _gameRepository.GetGameByIdAsync(id);
 
             if (game == null)
             {
@@ -88,7 +85,7 @@ namespace GameStore.Services.Impl
 
         public async Task<bool> AddCommentAsync(string? userId, AddCommentRequest request)
         {
-            var game = await _gameRepository.GetByIdAsync(request.GameId);
+            var game = await _gameRepository.GetGameByIdAsync(request.GameId);
             var user = await _userManager.FindByIdAsync(userId);
 
             if (user == null || game == null)

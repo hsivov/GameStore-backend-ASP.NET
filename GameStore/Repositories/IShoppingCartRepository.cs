@@ -7,5 +7,6 @@ namespace GameStore.Repositories
         Task<ShoppingCart> GetShoppingCartAsync(Guid id);
         Task<ShoppingCart> GetShoppingCartByCustomerAsync(ApplicationUser customer);
         Task SaveShoppingCart(ShoppingCart shoppingCart);
+        Task UpdateShoppingCart(ShoppingCart shoppingCart);
     }
 }

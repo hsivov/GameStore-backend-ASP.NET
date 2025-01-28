@@ -30,5 +30,11 @@ namespace GameStore.Repositories.Impl
             await _context.ShoppingCarts.AddAsync(shoppingCart);
             await _context.SaveChangesAsync();
         }
+
+        public async Task UpdateShoppingCart(ShoppingCart shoppingCart)
+        {
+            _context.ShoppingCarts.Update(shoppingCart);
+            await _context.SaveChangesAsync();
+        }
     }
 }

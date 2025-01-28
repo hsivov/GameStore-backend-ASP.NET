@@ -4,7 +4,7 @@ namespace GameStore.Repositories
 {
     public interface IGameRepository
     {
-        Task<Game> GetByIdAsync(Guid id);
+        Task<Game> GetGameByIdAsync(Guid id);
         Task<IEnumerable<Game>> GetAllAsync();
         Task<IEnumerable<Comment>> GetCommentsAsync(Guid id);
         Task AddAsync(Game game);

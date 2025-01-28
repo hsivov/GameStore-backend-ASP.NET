@@ -18,15 +18,17 @@ namespace GameStore.Controllers
         private readonly IShoppingCartRepository _shoppingCartRepository;
         private readonly BlobService _blobService;
         private readonly ILogger<UserController> _logger;
+        private readonly IGameRepository _gameRepository;
         // Allowed image extensions
         private readonly string[] _allowedExtensions = { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".webp" };
 
-        public UserController(UserManager<ApplicationUser> userManager, IShoppingCartRepository shoppingCartRepository, ILogger<UserController> logger, BlobService blobService)
+        public UserController(UserManager<ApplicationUser> userManager, IShoppingCartRepository shoppingCartRepository, ILogger<UserController> logger, BlobService blobService, IGameRepository gameRepository)
         {
             _userManager = userManager;
             _shoppingCartRepository = shoppingCartRepository;
             _logger = logger;
             _blobService = blobService;
+            _gameRepository = gameRepository;
         }
 
         [HttpPost("profile/image-upload")]
@@ -111,6 +113,36 @@ namespace GameStore.Controllers
             return Ok(ownedGamesDto);
         }
 
+        [HttpPost("library/add-game/{id}")]
+        [Authorize]
+        public async Task<IActionResult> AddGameToLibrary(Guid id)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null)
+            {
+                return Unauthorized(new { message = "The provided token is invalid or has expired. Please authenticate again." });
+            }
+            var user = await _userManager.Users
+                .Include(u => u.OwnedGames)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
+            {
+                return NotFound(new { message = "User not found." });
+            }
+            var game = await _gameRepository.GetGameByIdAsync(id);
+            if (game == null)
+            {
+                return NotFound(new { message = "Game not found." });
+            }
+            if (user.OwnedGames.Any(g => g.Id == id))
+            {
+                return BadRequest(new { message = "Game is already in the library." });
+            }
+            user.OwnedGames.Add(game);
+            await _userManager.UpdateAsync(user);
+            return Ok(new { message = "Game added to library." });
+        }
+
         [HttpGet("shopping-cart")]
         [Authorize]
         public async Task<IActionResult> GetShoppingCart()
@@ -155,6 +187,44 @@ namespace GameStore.Controllers
             };
 
             return Ok(shoppingCartDto);
+        }
+
+        [HttpPost("shopping-cart/add-game/{id}")]
+        [Authorize]
+        public async Task<IActionResult> AddGameToShoppingCart(Guid id)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null)
+            {
+                return Unauthorized(new { message = "The provided token is invalid or has expired. Please authenticate again." });
+            }
+            var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
+            {
+                return NotFound(new { message = "User not found." });
+            }
+            var shoppingCart = await _shoppingCartRepository.GetShoppingCartByCustomerAsync(user);
+            if (shoppingCart == null)
+            {
+                shoppingCart = new ShoppingCart
+                {
+                    Id = Guid.NewGuid(),
+                    Customer = user
+                };
+                await _shoppingCartRepository.SaveShoppingCart(shoppingCart);
+            }
+            var game = await _gameRepository.GetGameByIdAsync(id);
+            if (game == null)
+            {
+                return NotFound(new { message = "Game not found." });
+            }
+            if (shoppingCart.Games.Any(g => g.Id == id))
+            {
+                return BadRequest(new { message = "Game is already in the shopping cart." });
+            }
+            shoppingCart.Games.AddLast(game);
+            await _shoppingCartRepository.UpdateShoppingCart(shoppingCart);
+            return Ok(new { message = "Game added to shopping cart." });
         }
     }
 }

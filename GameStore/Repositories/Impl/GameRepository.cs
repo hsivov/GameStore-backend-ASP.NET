@@ -13,7 +13,7 @@ namespace GameStore.Repositories.Impl
             _context = context;
         }
 
-        public async Task<Game> GetByIdAsync(Guid id)
+        public async Task<Game> GetGameByIdAsync(Guid id)
         {
             return await _context.Games
                 .Include(g => g.Genre)
@@ -30,7 +30,7 @@ namespace GameStore.Repositories.Impl
 
         public async Task<bool> AddCommentAsync(Comment comment)
         {
-            var game = await GetByIdAsync(comment.Game.Id);
+            var game = await GetGameByIdAsync(comment.Game.Id);
             if (game == null)
             {
                 return false;
@@ -59,7 +59,7 @@ namespace GameStore.Repositories.Impl
 
         public async Task DeleteAsync(Guid id)
         {
-            var game = await GetByIdAsync(id);
+            var game = await GetGameByIdAsync(id);
             if (game != null)
             {
                 _context.Games.Remove(game);
