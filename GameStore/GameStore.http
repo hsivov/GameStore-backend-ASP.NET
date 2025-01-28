@@ -1,0 +1,42 @@
+@GameStore_HostAddress = http://localhost:5242
+
+### Add a new game
+POST http://localhost:5242/api/games/add
+Content-Type: application/json
+
+{
+  "title": "War Thunder",
+  "description": "War Thunder is the most comprehensive free-to-play, cross-platform, MMO military game dedicated to aviation, armoured vehicles, and naval craft, from the early 20th century to the most advanced modern combat units. Join now and take part in major battles on land, in the air, and at sea.",
+  "imageUrl": "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/236390/header.jpg?t=1737122686",
+  "videoUrl": "https://video.fastly.steamstatic.com/store_trailers/257082547/movie480_vp9.webm?t=1734345883",
+  "releaseDate": "2013-08-15T00:00:00Z",
+  "publisher": "Gaijin",
+  "price": 0,
+  "genre": "MMO"
+}
+
+### Get all games
+GET http://localhost:5242/api/games
+Content-Type: application/json
+
+### Add a new user
+POST http://localhost:5242/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "zara",
+  "email": "zara.sivova@gmail.com",
+  "firstName": "Zara",
+  "lastName": "Sivova",
+  "age": 23,
+  "password": "Zara@1234",
+  "confirmPassword": "Zara@1234"
+}
+
+### Login user
+POST http://localhost:5242/api/auth/login
+Content-Type: application/json
+{
+    "username": "zara",
+    "password": "Zara@1234"
+}
