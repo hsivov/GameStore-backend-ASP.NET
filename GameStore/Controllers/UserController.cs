@@ -226,5 +226,58 @@ namespace GameStore.Controllers
             await _shoppingCartRepository.UpdateShoppingCart(shoppingCart);
             return Ok(new { message = "Game added to shopping cart." });
         }
+
+        [HttpDelete("shopping-cart/remove-game/{id}")]
+        [Authorize]
+        public async Task<IActionResult> RemoveGameFromShoppingCart(Guid id)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null)
+            {
+                return Unauthorized(new { message = "The provided token is invalid or has expired. Please authenticate again." });
+            }
+            var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
+            {
+                return NotFound(new { message = "User not found." });
+            }
+            var shoppingCart = await _shoppingCartRepository.GetShoppingCartByCustomerAsync(user);
+            if (shoppingCart == null)
+            {
+                return NotFound(new { message = "Shopping cart not found." });
+            }
+            var game = shoppingCart.Games.FirstOrDefault(g => g.Id == id);
+            if (game == null)
+            {
+                return NotFound(new { message = "Game not found in the shopping cart." });
+            }
+            shoppingCart.Games.Remove(game);
+            await _shoppingCartRepository.UpdateShoppingCart(shoppingCart);
+            return Ok(new { message = "Game removed from shopping cart." });
+        }
+
+        [HttpPost("shopping-cart/remove-all")]
+        [Authorize]
+        public async Task<IActionResult> RemoveAllGamesFromShoppingCart()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null)
+            {
+                return Unauthorized(new { message = "The provided token is invalid or has expired. Please authenticate again." });
+            }
+            var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
+            {
+                return NotFound(new { message = "User not found." });
+            }
+            var shoppingCart = await _shoppingCartRepository.GetShoppingCartByCustomerAsync(user);
+            if (shoppingCart == null)
+            {
+                return NotFound(new { message = "Shopping cart not found." });
+            }
+            shoppingCart.Games.Clear();
+            await _shoppingCartRepository.UpdateShoppingCart(shoppingCart);
+            return Ok(new { message = "All games removed from shopping cart." });
+        }
     }
 }
