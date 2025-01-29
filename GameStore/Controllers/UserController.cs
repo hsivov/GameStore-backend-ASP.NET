@@ -31,6 +31,66 @@ namespace GameStore.Controllers
             _gameRepository = gameRepository;
         }
 
+        [HttpPost("edit-profile")]
+        [Authorize]
+        public async Task<IActionResult> EditProfile(EditUserRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var username = User.FindFirst(ClaimTypes.Name)?.Value;
+            if (string.IsNullOrEmpty(username))
+            {
+                return Unauthorized(new { message = "The provided token is invalid or has expired. Please authenticate again." });
+            }
+            var applicationUser = await _userManager.FindByNameAsync(username);
+            if (applicationUser == null)
+            {
+                return NotFound(new { message = "User not found." });
+            }
+            applicationUser.Email = request.Email;
+            applicationUser.FirstName = request.FirstName;
+            applicationUser.LastName = request.LastName;
+            applicationUser.Age = request.Age;
+            var result = await _userManager.UpdateAsync(applicationUser);
+            if (result.Succeeded)
+            {
+                return Ok(new { message = "Profile updated successfully." });
+            }
+            return BadRequest(new { message = "Failed to update profile." });
+        }
+
+        [HttpPost("change-password")]
+        [Authorize]
+        public async Task<IActionResult> ChangePassword(ChangePasswordRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var username = User.FindFirst(ClaimTypes.Name)?.Value;
+            if (string.IsNullOrEmpty(username))
+            {
+                return Unauthorized(new { message = "The provided token is invalid or has expired. Please authenticate again." });
+            }
+
+            var applicationUser = await _userManager.FindByNameAsync(username);
+            if (applicationUser == null)
+            {
+                return NotFound(new { message = "User not found." });
+            }
+
+            var result = await _userManager.ChangePasswordAsync(applicationUser, request.Password, request.NewPassword);
+            if (result.Succeeded)
+            {
+                return Ok(new { message = "Password changed successfully." });
+            }
+            return BadRequest(new { message = "Failed to change password.", errors = result.Errors.Select(e => e.Description) });
+        }
+
         [HttpPost("profile/image-upload")]
         [Authorize]
         public async Task<IActionResult> UploadImage(IFormFile file)

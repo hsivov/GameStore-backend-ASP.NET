@@ -3,6 +3,7 @@ using GameStore.Models.Entities;
 using GameStore.Models.Enums;
 using GameStore.Services;
 using GameStore.Utils;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -70,7 +71,7 @@ namespace GameStore.Controllers
 
         [HttpPost("register")]
         [AllowAnonymous]
-        public async Task<IActionResult> Register([FromBody] RegisterUserRequest request)
+        public async Task<IActionResult> Register(RegisterUserRequest request)
         {
             if (!ModelState.IsValid)
             {
@@ -143,6 +144,7 @@ namespace GameStore.Controllers
         }
 
         [HttpGet("ConfirmEmail")]
+        [AllowAnonymous]
         public async Task<IActionResult> ConfirmEmail(string userId, string token)
         {
             if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(token))
@@ -171,6 +173,79 @@ namespace GameStore.Controllers
             }
 
             return Redirect($"http://localhost:5173/login?message={Uri.EscapeDataString("Email confirmation failed. Please try again.")}");
+        }
+
+        [HttpPost("forgot-password")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ForgotPassword([FromBody] Dictionary<string, string> data)
+        {
+            if (!data.TryGetValue("email", out var email) || string.IsNullOrWhiteSpace(email))
+            {
+                return BadRequest("Email is required.");
+            }
+
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user == null)
+            {
+                return NotFound(new { message = "Provided email is not valid." });
+            }
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+
+            var resetLink = Url.Action("ResetPassword", "Auth", new { userId = user.Id, token = HttpUtility.UrlEncode(token) }, Request.Scheme);
+            var subject = "Reset your password";
+            var message = $"<h3>Reset your password</h3>" +
+                "<p>Hello <strong>" + user.FirstName + "</strong>,</p>" +
+                "<p>We received a request to reset the password for your account. " +
+                "If you made this request, please click the button below to reset your password:</p>" +
+                "<a href=\"" + resetLink + "\">Reset My Password</a>" +
+                "<p>If the button above doesn’t work, copy and paste the following link into your browser:</p>" +
+                "<p>" + resetLink + "</p>" +
+                "<p>This link is valid for <strong>24 hours</strong>.</p>" +
+                "<p><strong>If you did not request a password reset</strong>, no action is required. " +
+                "Your account is still secure, and your password has not been changed. " +
+                "If you suspect any suspicious activity, please contact our support team immediately.</p>" +
+                "<p>Thank you,</p>" +
+                "<p>The <strong>Game Store</strong> Support Team</p>" +
+                "<div>" +
+                "<p>This email is automatically generated. Please do not answer. If you need further assistance, " +
+                "please contact us at <a href=\"mailto:support@yourwebsite.com\">support@yourwebsite.com</a>.</p>" +
+                "</div>";
+
+            await _emailService.SendEmailAsync(user.Email, subject, message);
+
+            return Ok(new { message = "An email has been sent to you with instructions how to reset your password." });
+        }
+
+        [HttpGet("reset-password")]
+        [AllowAnonymous]
+        public IActionResult ResetPassword(string userId, string token)
+        {
+            return Redirect($"http://localhost:5173/reset-password?userId={userId}&token={HttpUtility.UrlEncode(token)}");
+        }
+
+        [HttpPost("reset-password")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ResetPassword(string userId, string token, string password)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound(new { message = "User not found." });
+            }
+            
+            var result = await _userManager.ResetPasswordAsync(user, token, password);
+            if (result.Succeeded)
+            {
+                return Ok(new { message = "Password reset successful." });
+            }
+            return BadRequest(new { message = "Password reset failed.", errors = result.Errors.Select(e => e.Description) });
+        }
+
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
+        {
+            await HttpContext.SignOutAsync();
+            return Ok(new { message = "Logout successful." });
         }
     }
 }
