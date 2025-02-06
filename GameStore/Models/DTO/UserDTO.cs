@@ -11,5 +11,6 @@
         public string Role { get; set; }
         public string ProfilePictureUrl { get; set; } = string.Empty;
         public List<OwnedGameDTO> OwnedGames { get; set; } = [];
+        public bool IsConfirmed { get; set; }
     }
 }

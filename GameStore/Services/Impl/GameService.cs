@@ -2,6 +2,7 @@
 using GameStore.Models.Entities;
 using GameStore.Repositories;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 
 namespace GameStore.Services.Impl
 {
@@ -129,6 +130,16 @@ namespace GameStore.Services.Impl
             await _gameRepository.AddAsync(game);
 
             return game;
+        }
+
+        public async Task DeleteGameAsync(Guid id)
+        {
+            var game = await _gameRepository.GetGameByIdAsync(id);
+            if (game == null)
+            {
+                return;
+            }
+            await _gameRepository.DeleteAsync(id);
         }
     }
 }

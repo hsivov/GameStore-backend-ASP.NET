@@ -8,6 +8,7 @@ namespace GameStore.Services
     {
         Task<bool> AddCommentAsync(string? userId, AddCommentRequest request);
         Task<Game> AddGameAsync(AddGameRequest request);
+        Task DeleteGameAsync(Guid gameId);
         Task<IEnumerable<GameDTO>> GetAllGamesAsync();
         Task<GameDTO> GetGameByIdAsync(Guid id);
         Task<IEnumerable<CommentDTO>> GetGameCommentsAsync(Guid id);

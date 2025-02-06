@@ -75,17 +75,5 @@ namespace GameStore.Controllers
 
             return Ok("Comment added successfully.");
         }
-
-        [HttpPost("add")]
-        public async Task<IActionResult> AddGame([FromBody] AddGameRequest request)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var game = await _gameService.AddGameAsync(request);
-            return CreatedAtAction(nameof(AddGame), new { id = game.Id }, game);
-        }
     }
 }

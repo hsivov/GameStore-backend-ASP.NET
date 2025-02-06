@@ -1,9 +1,12 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using GameStore.Models.Entities;
+using System.ComponentModel.DataAnnotations;
 
 namespace GameStore.Models.DTO
 {
     public class AddGameRequest
     {
+        private DateTime _releaseDate;
+
         [Required]
         [StringLength(30, MinimumLength = 5)]
         public required string Title { get; set; }
@@ -19,7 +22,10 @@ namespace GameStore.Models.DTO
         public string? VideoUrl { get; set; }
 
         [Required]
-        public DateTime ReleaseDate { get; set; }
+        public DateTime ReleaseDate {
+            get => _releaseDate;
+            set => _releaseDate = DateTime.SpecifyKind(value, DateTimeKind.Utc);
+        }
 
         [Required]
         [StringLength(20, MinimumLength = 2)]
