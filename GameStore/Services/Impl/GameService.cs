@@ -31,7 +31,7 @@ namespace GameStore.Services.Impl
                 Price = game.Price,
                 ReleaseDate = game.ReleaseDate.ToString("dd-MM-yyyy"),
                 Publisher = game.Publisher,
-                Genre = game.Genre.Name,
+                Genre = game.Genre?.Name ?? "Unknown",
                 ImageUrl = game.ImageUrl,
                 VideoUrl = game.VideoUrl
             }).ToList();

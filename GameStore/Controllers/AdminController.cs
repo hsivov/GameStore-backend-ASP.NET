@@ -16,11 +16,13 @@ namespace GameStore.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IGameService _gameService;
         private readonly IGenreRepository _genreRepository;
-        public AdminController(UserManager<ApplicationUser> userManager, IGameService gameService, IGenreRepository genreRepository)
+        private readonly IOrderRepository _orderRepository;
+        public AdminController(UserManager<ApplicationUser> userManager, IGameService gameService, IGenreRepository genreRepository, IOrderRepository orderRepository)
         {
             _userManager = userManager;
             _gameService = gameService;
             _genreRepository = genreRepository;
+            _orderRepository = orderRepository;
         }
 
         [HttpGet("users")]
@@ -194,6 +196,55 @@ namespace GameStore.Controllers
 
             await _genreRepository.DeleteAsync(genreId);
             return Ok();
+        }
+
+        [HttpGet("orders")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IEnumerable<OrderDTO>> GetOrders()
+        {
+            var orders = await _orderRepository.GetOrdersAsync();
+            return orders
+                .OrderBy(o => o.OrderDate)
+                .Select(o => new OrderDTO
+                {
+                    Id = o.Id,
+                    TotalPrice = o.TotalPrice,
+                    Status = o.Status.ToString(),
+                    BoughtGames = o.BoughtGames.Select(g => new OrderGameDTO
+                    {
+                        Id = g.Id,
+                        Title = g.Title,
+                        Price = g.Price
+                    }).ToList(),
+                    OrderDate = o.OrderDate.ToString("dd.MM.yyyy HH:mm:ss"),
+                    CustomerName = o.Customer.FirstName + " " + o.Customer.LastName
+                });
+        }
+
+        [HttpGet("order/{orderId}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetOrder(int orderId)
+        {
+            var order = await _orderRepository.GetOrderByIdAsync(orderId);
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(new OrderDTO
+            {
+                Id = order.Id,
+                TotalPrice = order.TotalPrice,
+                Status = order.Status.ToString(),
+                BoughtGames = order.BoughtGames.Select(g => new OrderGameDTO
+                {
+                    Id = g.Id,
+                    Title = g.Title,
+                    Price = g.Price
+                }).ToList(),
+                OrderDate = order.OrderDate.ToString("dd.MM.yyyy HH:mm:ss"),
+                CustomerName = order.Customer.FirstName + " " + order.Customer.LastName
+            });
         }
     }
 }
