@@ -352,5 +352,45 @@ namespace GameStore.Controllers
             await _shoppingCartRepository.UpdateShoppingCart(shoppingCart);
             return Ok(new { message = "All games removed from shopping cart." });
         }
+
+        [HttpPost("shopping-cart/checkout")]
+        [Authorize]
+        public async Task<IActionResult> Checkout()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null)
+            {
+                return Unauthorized(new { message = "The provided token is invalid or has expired. Please authenticate again." });
+            }
+            var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
+            {
+                return NotFound(new { message = "User not found." });
+            }
+            var shoppingCart = await _shoppingCartRepository.GetShoppingCartByCustomerAsync(user);
+            if (shoppingCart == null)
+            {
+                return BadRequest(new { message = "Shopping cart is not found." });
+            }
+            var order = new Order
+            {
+                Customer = user,
+                OrderDate = DateTime.UtcNow,
+                Status = OrderStatus.Approved,
+                TotalPrice = shoppingCart.TotalPrice
+            };
+
+            foreach (var game in shoppingCart.Games)
+            {
+                order.BoughtGames.Add(game);
+                user.OwnedGames.Add(game);
+            }
+
+            shoppingCart.Games.Clear();
+            await _orderRepository.AddOrderAsync(order);
+            await _userManager.UpdateAsync(user);
+            await _shoppingCartRepository.UpdateShoppingCart(shoppingCart);
+            return Ok(new { message = "Checkout successful." });
+        }
     }
 }
