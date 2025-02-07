@@ -5,14 +5,14 @@ POST http://localhost:5242/api/games/add
 Content-Type: application/json
 
 {
-  "title": "War Thunder",
-  "description": "War Thunder is the most comprehensive free-to-play, cross-platform, MMO military game dedicated to aviation, armoured vehicles, and naval craft, from the early 20th century to the most advanced modern combat units. Join now and take part in major battles on land, in the air, and at sea.",
-  "imageUrl": "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/236390/header.jpg?t=1737122686",
-  "videoUrl": "https://video.fastly.steamstatic.com/store_trailers/257082547/movie480_vp9.webm?t=1734345883",
-  "releaseDate": "2013-08-15T00:00:00Z",
-  "publisher": "Gaijin",
-  "price": 0,
-  "genre": "MMO"
+  "title": "DiRT Rally 2.0",
+  "description": "DiRT Rally 2.0 dares you to carve your way through a selection of iconic rally locations from across the globe, in the most powerful off-road vehicles ever made, knowing that the smallest mistake could end your stage.",
+  "imageUrl": "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/690790/header.jpg?t=1730918452",
+  "videoUrl": "https://video.fastly.steamstatic.com/store_trailers/256969266/movie480_vp9.webm?t=1694601905",
+  "releaseDate": "2019-02-26",
+  "publisher": "Codemasters",
+  "price": 7.99,
+  "genre": "Racing"
 }
 
 ### Get all games
@@ -37,6 +37,6 @@ Content-Type: application/json
 POST http://localhost:5242/api/auth/login
 Content-Type: application/json
 {
-    "username": "zara",
-    "password": "Zara@1234"
+    "username": "hristo",
+    "password": "admiN@123"
 }

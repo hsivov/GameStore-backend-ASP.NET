@@ -5,19 +5,17 @@ namespace GameStore.Services.Impl
     public class BlobService
     {
         private readonly string _connectionString;
-        private readonly string _containerName;
 
-        public BlobService(string connectionString,  string containerName)
+        public BlobService(string connectionString)
         {
             _connectionString = connectionString;
-            _containerName = containerName;
         }
 
-        public async Task<string> UploadFileAsync(Stream fileStream, string fileName)
+        public async Task<string> UploadFileAsync(Stream fileStream, string fileName, string containerName)
         {
             try
             {
-                var blobContainerClient = new BlobContainerClient(_connectionString, _containerName);
+                var blobContainerClient = new BlobContainerClient(_connectionString, containerName);
 
                 // Ensure the container exists
                 await blobContainerClient.CreateIfNotExistsAsync();

@@ -3,7 +3,6 @@ using GameStore.Models.DTO;
 using GameStore.Models.Entities;
 using GameStore.Repositories;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
 
 namespace GameStore.Services.Impl
 {
@@ -12,12 +11,14 @@ namespace GameStore.Services.Impl
         private readonly IGameRepository _gameRepository;
         private readonly IGenreRepository _genreRepository;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly BlobService _blobService;
 
-        public GameService(IGameRepository gameRepository, IGenreRepository genreRepository, UserManager<ApplicationUser> userManager)
+        public GameService(IGameRepository gameRepository, IGenreRepository genreRepository, UserManager<ApplicationUser> userManager, BlobService blobService)
         {
             _gameRepository = gameRepository;
             _genreRepository = genreRepository;
             _userManager = userManager;
+            _blobService = blobService;
         }
 
         public async Task<IEnumerable<GameDTO>> GetAllGamesAsync()
@@ -114,14 +115,17 @@ namespace GameStore.Services.Impl
 
         public async Task<Game> AddGameAsync(AddGameRequest request)
         {
+            var imageBlobUrl = await UploadToAzureBlobStorage(request.ImageUrl, "images");
+            var videoBlobUrl = await UploadToAzureBlobStorage(request.VideoUrl, "videos");
+
             var genre = await _genreRepository.GetByNameAsync(request.Genre);
 
             var game = new Game
             {
                 Title = request.Title,
                 Description = request.Description,
-                ImageUrl = request.ImageUrl,
-                VideoUrl = request.VideoUrl,
+                ImageUrl = imageBlobUrl,
+                VideoUrl = videoBlobUrl,
                 ReleaseDate = request.ReleaseDate,
                 Publisher = request.Publisher,
                 Price = request.Price,
@@ -160,6 +164,22 @@ namespace GameStore.Services.Impl
                 return;
             }
             await _gameRepository.DeleteAsync(id);
+        }
+
+        private async Task<string> UploadToAzureBlobStorage(string fileUrl, string containerName)
+        {
+            Uri uri = new Uri(fileUrl);
+            string originalFileName = Path.GetFileName(uri.LocalPath);
+
+            // Generate a unique filename based on the original URL
+            string timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString();
+            string randomString = Guid.NewGuid().ToString("N").Substring(0, 8);
+            string newFileName = $"{timestamp}_{randomString}_{originalFileName}";
+
+            using var httpClient = new HttpClient();
+            var imageStream = await httpClient.GetStreamAsync(fileUrl);
+
+            return await _blobService.UploadFileAsync(imageStream, newFileName, containerName);
         }
     }
 }

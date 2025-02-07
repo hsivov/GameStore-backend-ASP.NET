@@ -27,5 +27,11 @@ namespace GameStore.Repositories.Impl
                 .Include(o => o.Customer)
                 .ToListAsync();
         }
+
+        public async Task AddOrderAsync(Order order)
+        {
+            await _context.Orders.AddAsync(order);
+            await _context.SaveChangesAsync();
+        }
     }
 }

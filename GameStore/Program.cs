@@ -68,8 +68,7 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddSingleton(serviceProvider =>
 {
     var connectionString = builder.Configuration.GetConnectionString("AzureBlobStorage");
-    var containerName = builder.Configuration["AzureBlobContainerName"];
-    return new BlobService(connectionString, containerName);
+    return new BlobService(connectionString);
 });
 
 // Register services

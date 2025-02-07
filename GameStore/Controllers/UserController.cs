@@ -1,5 +1,6 @@
 ﻿using GameStore.Models.DTO;
 using GameStore.Models.Entities;
+using GameStore.Models.Enums;
 using GameStore.Repositories;
 using GameStore.Services.Impl;
 using Microsoft.AspNetCore.Authorization;
@@ -19,16 +20,18 @@ namespace GameStore.Controllers
         private readonly BlobService _blobService;
         private readonly ILogger<UserController> _logger;
         private readonly IGameRepository _gameRepository;
+        private readonly IOrderRepository _orderRepository;
         // Allowed image extensions
         private readonly string[] _allowedExtensions = { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".webp" };
 
-        public UserController(UserManager<ApplicationUser> userManager, IShoppingCartRepository shoppingCartRepository, ILogger<UserController> logger, BlobService blobService, IGameRepository gameRepository)
+        public UserController(UserManager<ApplicationUser> userManager, IShoppingCartRepository shoppingCartRepository, ILogger<UserController> logger, BlobService blobService, IGameRepository gameRepository, IOrderRepository orderRepository)
         {
             _userManager = userManager;
             _shoppingCartRepository = shoppingCartRepository;
             _logger = logger;
             _blobService = blobService;
             _gameRepository = gameRepository;
+            _orderRepository = orderRepository;
         }
 
         [HttpPost("edit-profile")]
@@ -127,7 +130,7 @@ namespace GameStore.Controllers
             using var stream = file.OpenReadStream();
             try
             {
-                var url = await _blobService.UploadFileAsync(stream, newFileName);
+                var url = await _blobService.UploadFileAsync(stream, newFileName, "profile-images");
                 var user = await _userManager.FindByNameAsync(username);
                 if (user == null)
                 {
@@ -198,7 +201,17 @@ namespace GameStore.Controllers
             {
                 return BadRequest(new { message = "Game is already in the library." });
             }
+
+            var order = new Order
+            {
+                Customer = user,
+                OrderDate = DateTime.UtcNow,
+                Status = OrderStatus.Approved,
+                TotalPrice = game.Price
+            };
+            order.BoughtGames.Add(game);
             user.OwnedGames.Add(game);
+            await _orderRepository.AddOrderAsync(order);
             await _userManager.UpdateAsync(user);
             return Ok(new { message = "Game added to library." });
         }
