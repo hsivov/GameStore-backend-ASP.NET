@@ -1,4 +1,5 @@
-﻿using GameStore.Models.DTO;
+﻿using GameStore.Exceptions;
+using GameStore.Models.DTO;
 using GameStore.Models.Entities;
 using GameStore.Models.Enums;
 using GameStore.Repositories;
@@ -112,6 +113,26 @@ namespace GameStore.Controllers
             await _gameService.AddGameAsync(request);
 
             return StatusCode(201, new { message = "Game was added successfully" });
+        }
+
+        [HttpPut("update-game/{gameId}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateGame(Guid gameId, AddGameRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                await _gameService.UpdateGameAsync(gameId, request);
+                return Ok();
+            } 
+            catch (GameNotFoundException ex)
+            {
+                return NotFound(new { Error = ex.Message });
+            }
         }
 
         [HttpDelete("delete-game/{gameId}")]

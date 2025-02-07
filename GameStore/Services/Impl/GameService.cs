@@ -1,4 +1,5 @@
-﻿using GameStore.Models.DTO;
+﻿using GameStore.Exceptions;
+using GameStore.Models.DTO;
 using GameStore.Models.Entities;
 using GameStore.Repositories;
 using Microsoft.AspNetCore.Identity;
@@ -54,7 +55,7 @@ namespace GameStore.Services.Impl
                 Title = game.Title,
                 Description = game.Description,
                 Price = game.Price,
-                ReleaseDate = game.ReleaseDate.ToString("dd-MM-yyyy"),
+                ReleaseDate = game.ReleaseDate.ToString("yyyy-MM-dd"),
                 Publisher = game.Publisher,
                 Genre = game.Genre.Name,
                 ImageUrl = game.ImageUrl,
@@ -130,6 +131,25 @@ namespace GameStore.Services.Impl
             await _gameRepository.AddAsync(game);
 
             return game;
+        }
+
+        public async Task UpdateGameAsync(Guid id, AddGameRequest request)
+        {
+            var game = await _gameRepository.GetGameByIdAsync(id);
+            if (game == null)
+            {
+                throw new GameNotFoundException();
+            }
+            var genre = await _genreRepository.GetByNameAsync(request.Genre);
+            game.Title = request.Title;
+            game.Description = request.Description;
+            game.ImageUrl = request.ImageUrl;
+            game.VideoUrl = request.VideoUrl;
+            game.ReleaseDate = request.ReleaseDate;
+            game.Publisher = request.Publisher;
+            game.Price = request.Price;
+            game.Genre = genre;
+            await _gameRepository.UpdateAsync(game);
         }
 
         public async Task DeleteGameAsync(Guid id)
