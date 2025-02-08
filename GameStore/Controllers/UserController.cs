@@ -2,12 +2,14 @@
 using GameStore.Models.Entities;
 using GameStore.Models.Enums;
 using GameStore.Repositories;
+using GameStore.Services;
 using GameStore.Services.Impl;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using System.Text;
 
 namespace GameStore.Controllers
 {
@@ -21,10 +23,11 @@ namespace GameStore.Controllers
         private readonly ILogger<UserController> _logger;
         private readonly IGameRepository _gameRepository;
         private readonly IOrderRepository _orderRepository;
+        private readonly IEmailService _emailService;
         // Allowed image extensions
         private readonly string[] _allowedExtensions = { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".webp" };
 
-        public UserController(UserManager<ApplicationUser> userManager, IShoppingCartRepository shoppingCartRepository, ILogger<UserController> logger, BlobService blobService, IGameRepository gameRepository, IOrderRepository orderRepository)
+        public UserController(UserManager<ApplicationUser> userManager, IShoppingCartRepository shoppingCartRepository, ILogger<UserController> logger, BlobService blobService, IGameRepository gameRepository, IOrderRepository orderRepository, IEmailService emailService)
         {
             _userManager = userManager;
             _shoppingCartRepository = shoppingCartRepository;
@@ -32,6 +35,7 @@ namespace GameStore.Controllers
             _blobService = blobService;
             _gameRepository = gameRepository;
             _orderRepository = orderRepository;
+            _emailService = emailService;
         }
 
         [HttpPost("edit-profile")]
@@ -372,6 +376,7 @@ namespace GameStore.Controllers
             {
                 return BadRequest(new { message = "Shopping cart is not found." });
             }
+
             var order = new Order
             {
                 Customer = user,
@@ -387,10 +392,62 @@ namespace GameStore.Controllers
             }
 
             shoppingCart.Games.Clear();
+
             await _orderRepository.AddOrderAsync(order);
             await _userManager.UpdateAsync(user);
             await _shoppingCartRepository.UpdateShoppingCart(shoppingCart);
+
+            string message = createConfirmationEmail(order, user);
+            string subject = "Order Confirmation";
+            await _emailService.SendEmailAsync(user.Email, subject, message);
+
             return Ok(new { message = "Checkout successful." });
+        }
+
+        private string createConfirmationEmail(Order order, ApplicationUser customer)
+        {
+            StringBuilder sb = new StringBuilder();
+
+            foreach (Game game in order.BoughtGames)
+            {
+                sb.Append("<li>").Append(game.Title).Append("</li>");
+            }
+
+            return "<!DOCTYPE html>\n" +
+                    "<html lang=\"en\">\n" +
+                    "<head>\n" +
+                    "    <meta charset=\"UTF-8\">\n" +
+                    "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n" +
+                    "    <title>Order Confirmation</title>\n" +
+                    "</head>\n" +
+                    "<body style=\"font-family: Arial, sans-serif; color: #333; line-height: 1.6; margin: 0; padding: 0;\">\n" +
+                    "    <div style=\"max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd;\">\n" +
+                    "        <h2 style=\"color: #2d3748;\">Thank You for Your Purchase!</h2>\n" +
+                    "        \n" +
+                    "        <p>Hi <strong>" + customer.FirstName + "</strong>,</p>\n" +
+                    "        <p>Thank you for your recent purchase with <strong>Game Store</strong>! We’re excited to let you know that your order (#<strong>" + order.Id + "</strong>) has been successfully processed.</p>\n" +
+                    "        \n" +
+                    "        <h3 style=\"color: #4a5568;\">Order Details:</h3>\n" +
+                    "        <ul>\n" +
+                    "            <li><strong>Item(s) Purchased: </strong></li>\n" +
+                    "       " + sb + "\n" +
+                    "            <li><strong>Order Total: </strong>" + order.TotalPrice + " лв.</li>\n" +
+                    "        </ul>\n" +
+                    "\n" +
+                    "        <h3 style=\"color: #4a5568;\">What’s Next?</h3>\n" +
+                    "        <p><strong>Need Help?</strong> If you have any questions or need further assistance, feel free to reach out to us at <a href=\"mailto:[Customer Support Email]\" style=\"color: #3182ce;\">[Customer Support Email]</a> or call us at [Phone Number].</p>\n" +
+                    "\n" +
+                    "        <p>We truly appreciate your business and hope you love your new [product]! Keep an eye out for future offers and product updates from us.</p>\n" +
+                    "\n" +
+                    "        <p>Thanks again for choosing <strong>Game Store</strong>!</p>\n" +
+                    "\n" +
+                    "        <p>Best regards,</p>\n" +
+                    "        <p><strong>The Game Store Team</strong></p>\n" +
+                    "        <p>[Company Contact Information]</p>\n" +
+                    "        <p><a href=\"[Company Social Media Link]\" style=\"color: #3182ce;\">Follow us on social media</a></p>\n" +
+                    "    </div>\n" +
+                    "</body>\n" +
+                    "</html>\n";
         }
     }
 }
