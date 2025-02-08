@@ -101,6 +101,16 @@ builder.Services.AddCors(options =>
                .AllowCredentials(); // Allow credentials
     });
 });
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AzureStaticWebAppPolicy", builder =>
+    {
+        builder.WithOrigins("https://white-hill-0ca3ba210.5.azurestaticapps.net") // Specify allowed origin
+               .WithMethods("GET", "POST", "PUT", "DELETE") // Specify allowed methods
+               .AllowAnyHeader() // Allow all headers
+               .AllowCredentials(); // Allow credentials
+    });
+});
 
 var app = builder.Build();
 
@@ -134,7 +144,7 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.UseCors("LocalPolicy");
+app.UseCors("AzureStaticWebAppPolicy");
 
 app.UseEndpoints(endpoints =>
 {
