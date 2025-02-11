@@ -113,7 +113,7 @@ namespace GameStore.Services.Impl
             return true;
         }
 
-        public async Task<Game> AddGameAsync(AddGameRequest request)
+        public async Task AddGameAsync(AddGameRequest request)
         {
             var imageBlobUrl = await UploadToAzureBlobStorage(request.ImageUrl, "images");
             var videoBlobUrl = await UploadToAzureBlobStorage(request.VideoUrl, "videos");
@@ -133,8 +133,6 @@ namespace GameStore.Services.Impl
             };
 
             await _gameRepository.AddAsync(game);
-
-            return game;
         }
 
         public async Task UpdateGameAsync(Guid id, AddGameRequest request)

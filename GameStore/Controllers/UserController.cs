@@ -38,6 +38,61 @@ namespace GameStore.Controllers
             _emailService = emailService;
         }
 
+        [HttpGet("orders")]
+        [Authorize]
+        public async Task<IActionResult> GetOrders()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null)
+            {
+                return Unauthorized(new { message = "The provided token is invalid or has expired. Please authenticate again." });
+            }
+            
+            var userOrders = await _orderRepository.GetOrdersByUserAsync(userId);
+
+            var orderDtos = userOrders.Select(order => new OrderDTO
+            {
+                Id = order.Id,
+                OrderDate = order.OrderDate.ToString("dd.MM.yyyy HH:mm"),
+                Status = order.Status.ToString(),
+                TotalPrice = order.TotalPrice,
+                BoughtGames = order.BoughtGames.Select(game => new OrderGameDTO
+                {
+                    Id = game.Id,
+                    Title = game.Title,
+                    Price = game.Price
+                }).ToList()
+            });
+
+            return Ok(orderDtos);
+        }
+
+        [HttpGet("order/{orderId}")]
+        [Authorize]
+        public async Task<IActionResult> GetOrder(int orderId)
+        {
+            var order = await _orderRepository.GetOrderByIdAsync(orderId);
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(new OrderDTO
+            {
+                Id = order.Id,
+                TotalPrice = order.TotalPrice,
+                Status = order.Status.ToString(),
+                BoughtGames = order.BoughtGames.Select(g => new OrderGameDTO
+                {
+                    Id = g.Id,
+                    Title = g.Title,
+                    Price = g.Price
+                }).ToList(),
+                OrderDate = order.OrderDate.ToString("dd.MM.yyyy HH:mm:ss"),
+                CustomerName = order.Customer.FirstName + " " + order.Customer.LastName
+            });
+        }
+
         [HttpPost("edit-profile")]
         [Authorize]
         public async Task<IActionResult> EditProfile(EditUserRequest request)
@@ -397,14 +452,14 @@ namespace GameStore.Controllers
             await _userManager.UpdateAsync(user);
             await _shoppingCartRepository.UpdateShoppingCart(shoppingCart);
 
-            string message = createConfirmationEmail(order, user);
+            string message = CreateConfirmationEmail(order, user);
             string subject = "Order Confirmation";
             await _emailService.SendEmailAsync(user.Email, subject, message);
 
             return Ok(new { message = "Checkout successful." });
         }
 
-        private string createConfirmationEmail(Order order, ApplicationUser customer)
+        private static string CreateConfirmationEmail(Order order, ApplicationUser customer)
         {
             StringBuilder sb = new StringBuilder();
 

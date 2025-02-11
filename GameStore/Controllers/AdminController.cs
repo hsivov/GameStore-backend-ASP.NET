@@ -241,31 +241,5 @@ namespace GameStore.Controllers
                     CustomerName = o.Customer.FirstName + " " + o.Customer.LastName
                 });
         }
-
-        [HttpGet("order/{orderId}")]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> GetOrder(int orderId)
-        {
-            var order = await _orderRepository.GetOrderByIdAsync(orderId);
-            if (order == null)
-            {
-                return NotFound();
-            }
-
-            return Ok(new OrderDTO
-            {
-                Id = order.Id,
-                TotalPrice = order.TotalPrice,
-                Status = order.Status.ToString(),
-                BoughtGames = order.BoughtGames.Select(g => new OrderGameDTO
-                {
-                    Id = g.Id,
-                    Title = g.Title,
-                    Price = g.Price
-                }).ToList(),
-                OrderDate = order.OrderDate.ToString("dd.MM.yyyy HH:mm:ss"),
-                CustomerName = order.Customer.FirstName + " " + order.Customer.LastName
-            });
-        }
     }
 }
